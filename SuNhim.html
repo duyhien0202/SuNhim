@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đố Vui Gemini AI</title>
+
+    <!-- Thẻ cài đặt App ra Màn hình chính (PWA) -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Đố Vui AI">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3081/3081840.png">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3081/3081840.png">
+
+    <style>
+        * { box-sizing: border-box; font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; }
+        body {
+            margin: 0; padding: 15px;
+            background: linear-gradient(135deg, #a8edd9 0%, #fed6e3 100%);
+            min-height: 100vh; display: flex; justify-content: center; align-items: center;
+        }
+        .app-card {
+            background: #ffffff; border-radius: 25px; padding: 20px;
+            width: 100%; max-width: 480px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15); border: 4px solid #ffbe0b;
+            text-align: center;
+        }
+        h1 { color: #ff007f; margin: 0 0 10px 0; font-size: 1.6rem; }
+        
+        .api-config {
+            background: #fff3bf; padding: 10px; border-radius: 12px;
+            margin-bottom: 15px; font-size: 0.85rem; display: flex; gap: 5px;
+        }
+        .api-config input { flex: 1; padding: 6px; border-radius: 6px; border: 1px solid #ccc; }
+        .api-config button { padding: 6px 10px; border: none; background: #ff007f; color: white; border-radius: 6px; cursor: pointer; }
+
+        .mode-btn-group { display: flex; gap: 6px; margin-bottom: 15px; }
+        .mode-btn {
+            flex: 1; padding: 8px 2px; border: none; border-radius: 10px;
+            font-weight: bold; cursor: pointer; color: white; font-size: 0.85rem;
+        }
+        .mode-btn.easy { background: #06d6a0; }
+        .mode-btn.medium { background: #118ab2; }
+        .mode-btn.hard { background: #ef476f; }
+        .mode-btn.active { outline: 3px solid #333; }
+
+        .quiz-info { display: flex; justify-content: space-between; font-weight: bold; color: #555; margin-bottom: 10px; }
+        .question-box {
+            background: #f0f3f8; padding: 15px; border-radius: 15px;
+            font-size: 1.05rem; color: #2b2d42; margin-bottom: 15px;
+            min-height: 90px; display: flex; align-items: center; justify-content: center;
+            border: 2px dashed #4cc9f0; line-height: 1.4;
+        }
+        .answers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .ans-btn {
+            padding: 12px 8px; border: 2px solid #e0e0e0; background: white;
+            border-radius: 12px; font-size: 0.9rem; font-weight: bold;
+            cursor: pointer; text-align: left; color: #333;
+        }
+        .ans-btn.correct { background: #06d6a0 !important; color: white; border-color: #06d6a0; }
+        .ans-btn.wrong { background: #ef476f !important; color: white; border-color: #ef476f; }
+
+        .control-panel { margin-top: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .action-btn {
+            padding: 10px 15px; border: none; border-radius: 20px;
+            background: #ff007f; color: white; font-weight: bold; cursor: pointer;
+        }
+        .music-toggle {
+            background: #ffd166; border: none; border-radius: 50%;
+            width: 38px; height: 38px; cursor: pointer; font-size: 1.1rem;
+        }
+        .loading { font-size: 0.95rem; color: #ff007f; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="app-card">
+    <h1>🎈 ĐỐ VUI GEMINI AI 🤖</h1>
+
+    <!-- Nhập API Key (Lưu trực tiếp trên máy người dùng) -->
+    <div class="api-config">
+        <input type="password" id="api-key" placeholder="Dán Gemini API Key vào đây">
+        <button onclick="saveApiKey()">Lưu Key</button>
+    </div>
+
+    <!-- Chọn chế độ -->
+    <div class="mode-btn-group">
+        <button class="mode-btn easy active" onclick="setMode('easy')">Dễ (5-6T)</button>
+        <button class="mode-btn medium" onclick="setMode('medium')">Vừa (7-8T)</button>
+        <button class="mode-btn hard" onclick="setMode('hard')">Khó (9-10T)</button>
+    </div>
+
+    <div class="quiz-info">
+        <span id="progress">Câu: 0/10</span>
+        <span id="score">Điểm: 0</span>
+    </div>
+
+    <div class="question-box" id="question-text">Vui lòng nhập API Key để Gemini tạo bộ câu hỏi mới!</div>
+    <div class="answers-grid" id="answers-container"></div>
+
+    <div class="control-panel">
+        <button class="music-toggle" onclick="toggleMusic()" id="music-btn">🎵</button>
+        <button class="action-btn" onclick="fetchNewQuizSet()">🔄 Tải Bộ Mới (AI)</button>
+    </div>
+</div>
+
+<script>
+let apiKey = localStorage.getItem('GEMINI_API_KEY') || '';
+if(apiKey) document.getElementById('api-key').value = apiKey;
+
+let currentMode = 'easy';
+let currentSet = [];
+let currentIndex = 0;
+let score = 0;
+let isAnswered = false;
+
+function saveApiKey() {
+    apiKey = document.getElementById('api-key').value.trim();
+    localStorage.setItem('GEMINI_API_KEY', apiKey);
+    alert('Đã lưu API Key! Bấm "Tải Bộ Mới" để bắt đầu.');
+}
+
+function setMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.mode-btn.${mode}`).classList.add('active');
+    fetchNewQuizSet();
+}
+
+// Gọi trực tiếp Google Gemini API
+async function fetchNewQuizSet() {
+    if (!apiKey) {
+        alert('Vui lòng nhập Gemini API Key của bạn ở ô phía trên!');
+        return;
+    }
+
+    const qBox = document.getElementById('question-text');
+    document.getElementById('answers-container').innerHTML = '';
+    qBox.innerHTML = '<span class="loading">⏳ Gemini đang vắt óc tạo 10 câu đố mới...</span>';
+
+    const prompts = {
+        easy: "Cho trẻ 5-6 tuổi (đồ vật, con vật, màu sắc đơn giản)",
+        medium: "Cho trẻ 7-8 tuổi (kiến thức tự nhiên, toán logic nhẹ, hiện tượng đời sống)",
+        hard: "Cho trẻ 9-10 tuổi (đố mẹo tư duy, khoa học vui, lịch sử - địa lý đơn giản)"
+    };
+
+    const promptText = `Tạo cho tôi 10 câu đố vui ${prompts[currentMode]}. 
+    Yêu cầu trả về DUY NHẤT một mảng JSON thuần chuẩn (không dùng markdown code block, không thêm chữ dẫn nhập) theo cấu trúc:
+    [
+      {
+        "q": "Nội dung câu hỏi?",
+        "a": ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],
+        "c": 0
+      }
+    ]
+    Trong đó 'c' là chỉ số (index 0, 1, 2, hoặc 3) của đáp án đúng.`;
+
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: promptText }] }]
+            })
+        });
+
+        const data = await response.json();
+        let resText = data.candidates[0].content.parts[0].text;
+        
+        // Bỏ các ký tự bọc markdown nếu có
+        resText = resText.replace(/```json/g, '').replace(/```/g, '').trim();
+        
+        currentSet = JSON.parse(resText);
+        currentIndex = 0;
+        score = 0;
+        showQuestion();
+    } catch (err) {
+        console.error(err);
+        qBox.innerText = '⚠️ Lỗi tải câu hỏi từ Gemini! Vui lòng kiểm tra lại API Key hoặc bấm "Tải Bộ Mới".';
+    }
+}
+
+function showQuestion() {
+    isAnswered = false;
+    const q = currentSet[currentIndex];
+    document.getElementById('progress').innerText = `Câu: ${currentIndex + 1}/10`;
+    document.getElementById('score').innerText = `Điểm: ${score}`;
+    document.getElementById('question-text').innerText = q.q;
+
+    const container = document.getElementById('answers-container');
+    container.innerHTML = '';
+
+    const labels = ['A', 'B', 'C', 'D'];
+    q.a.forEach((ans, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'ans-btn';
+        btn.innerText = `${labels[i]}. ${ans}`;
+        btn.onclick = () => checkAnswer(i, btn);
+        container.appendChild(btn);
+    });
+}
+
+function checkAnswer(selectedIndex, btnElement) {
+    if (isAnswered) return;
+    isAnswered = true;
+
+    const correctIndex = currentSet[currentIndex].c;
+    const buttons = document.querySelectorAll('.ans-btn');
+
+    if (selectedIndex === correctIndex) {
+        btnElement.classList.add('correct');
+        score += 10;
+        playCorrectSound();
+    } else {
+        btnElement.classList.add('wrong');
+        buttons[correctIndex].classList.add('correct');
+        playWrongSound();
+    }
+
+    document.getElementById('score').innerText = `Điểm: ${score}`;
+
+    setTimeout(() => {
+        if (currentIndex < 9) {
+            currentIndex++;
+            showQuestion();
+        } else {
+            alert(`🎉 Bé đã xuất sắc hoàn thành bộ câu hỏi AI này!\nTổng điểm: ${score}/100`);
+            fetchNewQuizSet();
+        }
+    }, 1500);
+}
+
+// Hệ thống âm thanh Web Audio API
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let bgmInterval, isMusicPlaying = false;
+
+function playTone(freq, type, duration) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+}
+
+function playCorrectSound() { playTone(523.25, 'sine', 0.15); setTimeout(() => playTone(659.25, 'sine', 0.3), 150); }
+function playWrongSound() { playTone(200, 'sawtooth', 0.3); }
+
+function toggleMusic() {
+    isMusicPlaying = !isMusicPlaying;
+    document.getElementById('music-btn').innerText = isMusicPlaying ? '🔊' : '🎵';
+    if (isMusicPlaying) {
+        let notes = [261, 329, 392, 523, 392, 329];
+        let i = 0;
+        bgmInterval = setInterval(() => {
+            playTone(notes[i % notes.length], 'triangle', 0.2);
+            i++;
+        }, 400);
+    } else {
+        clearInterval(bgmInterval);
+    }
+}
+</script>
+</body>
+</html>
