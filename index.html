@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đố Vui Gemini AI</title>
+    <title>Su Nhim - Đố Vui AI</title>
 
-    <!-- Thẻ cài đặt App ra Màn hình chính (PWA) -->
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Đố Vui AI">
+    <meta name="apple-mobile-web-app-title" content="Su Nhim">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3081/3081840.png">
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3081/3081840.png">
 
@@ -74,15 +73,13 @@
 <body>
 
 <div class="app-card">
-    <h1>🎈 ĐỐ VUI GEMINI AI 🤖</h1>
+    <h1>🎈 SU NHIM - ĐỐ VUI AI 🤖</h1>
 
-    <!-- Nhập API Key (Lưu trực tiếp trên máy người dùng) -->
     <div class="api-config">
         <input type="password" id="api-key" placeholder="Dán Gemini API Key vào đây">
         <button onclick="saveApiKey()">Lưu Key</button>
     </div>
 
-    <!-- Chọn chế độ -->
     <div class="mode-btn-group">
         <button class="mode-btn easy active" onclick="setMode('easy')">Dễ (5-6T)</button>
         <button class="mode-btn medium" onclick="setMode('medium')">Vừa (7-8T)</button>
@@ -94,7 +91,7 @@
         <span id="score">Điểm: 0</span>
     </div>
 
-    <div class="question-box" id="question-text">Vui lòng nhập API Key để Gemini tạo bộ câu hỏi mới!</div>
+    <div class="question-box" id="question-text">Vui lòng nhập API Key để Su Nhim bắt đầu!</div>
     <div class="answers-grid" id="answers-container"></div>
 
     <div class="control-panel">
@@ -126,7 +123,6 @@ function setMode(mode) {
     fetchNewQuizSet();
 }
 
-// Gọi trực tiếp Google Gemini API
 async function fetchNewQuizSet() {
     if (!apiKey) {
         alert('Vui lòng nhập Gemini API Key của bạn ở ô phía trên!');
@@ -135,7 +131,7 @@ async function fetchNewQuizSet() {
 
     const qBox = document.getElementById('question-text');
     document.getElementById('answers-container').innerHTML = '';
-    qBox.innerHTML = '<span class="loading">⏳ Gemini đang vắt óc tạo 10 câu đố mới...</span>';
+    qBox.innerHTML = '<span class="loading">⏳ Su Nhim đang vắt óc tạo 10 câu đố mới...</span>';
 
     const prompts = {
         easy: "Cho trẻ 5-6 tuổi (đồ vật, con vật, màu sắc đơn giản)",
@@ -143,39 +139,37 @@ async function fetchNewQuizSet() {
         hard: "Cho trẻ 9-10 tuổi (đố mẹo tư duy, khoa học vui, lịch sử - địa lý đơn giản)"
     };
 
-    const promptText = `Tạo cho tôi 10 câu đố vui ${prompts[currentMode]}. 
-    Yêu cầu trả về DUY NHẤT một mảng JSON thuần chuẩn (không dùng markdown code block, không thêm chữ dẫn nhập) theo cấu trúc:
-    [
-      {
-        "q": "Nội dung câu hỏi?",
-        "a": ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],
-        "c": 0
-      }
-    ]
-    Trong đó 'c' là chỉ số (index 0, 1, 2, hoặc 3) của đáp án đúng.`;
+    const promptText = `Tạo 10 câu đố vui ${prompts[currentMode]}. Trả về JSON theo mẫu:
+[{"q":"Câu hỏi?","a":["A","B","C","D"],"c":0}]`;
 
     try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: promptText }] }]
+                contents: [{ parts: [{ text: promptText }] }],
+                generationConfig: {
+                    responseMimeType: "application/json"
+                }
             })
         });
 
         const data = await response.json();
+        
+        if (data.error) {
+            alert("Lỗi API Key: " + data.error.message);
+            qBox.innerText = "⚠️ API Key không hợp lệ. Vui lòng kiểm tra lại Key!";
+            return;
+        }
+
         let resText = data.candidates[0].content.parts[0].text;
-        
-        // Bỏ các ký tự bọc markdown nếu có
-        resText = resText.replace(/```json/g, '').replace(/```/g, '').trim();
-        
         currentSet = JSON.parse(resText);
         currentIndex = 0;
         score = 0;
         showQuestion();
     } catch (err) {
         console.error(err);
-        qBox.innerText = '⚠️ Lỗi tải câu hỏi từ Gemini! Vui lòng kiểm tra lại API Key hoặc bấm "Tải Bộ Mới".';
+        qBox.innerText = '⚠️ Không thể tải câu hỏi. Hãy kiểm tra kết nối mạng hoặc thử lại!';
     }
 }
 
@@ -223,13 +217,12 @@ function checkAnswer(selectedIndex, btnElement) {
             currentIndex++;
             showQuestion();
         } else {
-            alert(`🎉 Bé đã xuất sắc hoàn thành bộ câu hỏi AI này!\nTổng điểm: ${score}/100`);
+            alert(`🎉 Su Nhim chúc mừng bé đã hoàn thành!\nTổng điểm: ${score}/100`);
             fetchNewQuizSet();
         }
     }, 1500);
 }
 
-// Hệ thống âm thanh Web Audio API
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let bgmInterval, isMusicPlaying = false;
 
