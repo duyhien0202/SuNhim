@@ -4,12 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Su Nhim - Đố Vui AI</title>
-
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Su Nhim">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3081/3081840.png">
-    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3081/3081840.png">
-
     <style>
         * { box-sizing: border-box; font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; }
         body {
@@ -21,9 +15,11 @@
             background: #ffffff; border-radius: 25px; padding: 20px;
             width: 100%; max-width: 480px;
             box-shadow: 0 15px 30px rgba(0,0,0,0.15); border: 4px solid #ffbe0b;
-            text-align: center;
+            text-align: center; position: relative;
         }
-        h1 { color: #ff007f; margin: 0 0 10px 0; font-size: 1.6rem; }
+        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        h1 { color: #ff007f; margin: 0; font-size: 1.6rem; }
+        .settings-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; }
         
         .api-config {
             background: #fff3bf; padding: 10px; border-radius: 12px;
@@ -73,17 +69,20 @@
 <body>
 
 <div class="app-card">
-    <h1>🎈 ĐỐ VUI AI </h1>
+    <div class="header-box">
+        <h1>🎈 ĐỐ VUI AI 🤖</h1>
+        <button class="settings-btn" onclick="toggleKeyInput()">⚙️</button>
+    </div>
 
-<div class="api-config" id="api-config-box">
-    <input type="password" id="api-key" placeholder="Dán Gemini API Key vào đây">
-    <button onclick="saveApiKey()">Lưu Key</button>
-</div>
+    <div class="api-config" id="api-config-box">
+        <input type="password" id="api-key" placeholder="Dán Gemini API Key mới vào đây">
+        <button onclick="saveApiKey()">Lưu Key</button>
+    </div>
 
     <div class="mode-btn-group">
-        <button class="mode-btn easy active" onclick="setMode('easy')">Dễ </button>
-        <button class="mode-btn medium" onclick="setMode('medium')">Vừa </button>
-        <button class="mode-btn hard" onclick="setMode('hard')">Khó </button>
+        <button class="mode-btn easy active" onclick="setMode('easy')">Dễ</button>
+        <button class="mode-btn medium" onclick="setMode('medium')">Vừa</button>
+        <button class="mode-btn hard" onclick="setMode('hard')">Khó</button>
     </div>
 
     <div class="quiz-info">
@@ -91,7 +90,7 @@
         <span id="score">Điểm: 0</span>
     </div>
 
-    <div class="question-box" id="question-text">Vui lòng nhập API Key để tôi bắt đầu!</div>
+    <div class="question-box" id="question-text">Nhập API Key để bắt đầu chơi!</div>
     <div class="answers-grid" id="answers-container"></div>
 
     <div class="control-panel">
@@ -103,36 +102,37 @@
 <script>
 let apiKey = localStorage.getItem('GEMINI_API_KEY') || '';
 
-// Tự động kiểm tra: Nếu đã có Key thì ẩn khung nhập đi
 window.onload = function() {
     const configBox = document.getElementById('api-config-box');
     if (apiKey) {
         document.getElementById('api-key').value = apiKey;
-        configBox.style.display = 'none'; // Ẩn ô nhập Key
+        configBox.style.display = 'none';
+        fetchNewQuizSet();
     }
 };
 
 function saveApiKey() {
     const inputVal = document.getElementById('api-key').value.trim();
     if (!inputVal) {
-        alert('Vui lòng nhập API Key!');
+        alert('Vui lòng dán API Key!');
         return;
     }
     apiKey = inputVal;
     localStorage.setItem('GEMINI_API_KEY', apiKey);
-    document.getElementById('api-config-box').style.display = 'none'; // Ẩn ngay khi lưu
-    alert('Đã lưu API Key thành công!');
+    document.getElementById('api-config-box').style.display = 'none';
     fetchNewQuizSet();
 }
 
 function toggleKeyInput() {
     const configBox = document.getElementById('api-config-box');
-    if (configBox.style.display === 'none') {
-        configBox.style.display = 'flex';
-    } else {
-        configBox.style.display = 'none';
-    }
+    configBox.style.display = (configBox.style.display === 'none') ? 'flex' : 'none';
 }
+
+let currentMode = 'easy';
+let currentSet = [];
+let currentIndex = 0;
+let score = 0;
+let isAnswered = false;
 
 function setMode(mode) {
     currentMode = mode;
@@ -143,14 +143,13 @@ function setMode(mode) {
 
 async function fetchNewQuizSet() {
     if (!apiKey) {
-        document.getElementById('api-config-box').style.display = 'flex'; // Hiện lại ô nhập nếu chưa có Key
-        alert('Vui lòng nhập API Key để bắt đầu!');
+        document.getElementById('api-config-box').style.display = 'flex';
         return;
     }
 
     const qBox = document.getElementById('question-text');
     document.getElementById('answers-container').innerHTML = '';
-    qBox.innerHTML = '<span class="loading">⏳ Su Nhim đang vắt óc tạo 10 câu đố mới...</span>';
+    qBox.innerHTML = '<span class="loading">⏳ Su Nhim đang tạo câu hỏi...</span>';
 
     const prompts = {
         easy: "Cho trẻ 5-6 tuổi (đồ vật, con vật, màu sắc đơn giản)",
@@ -174,9 +173,8 @@ async function fetchNewQuizSet() {
         const data = await response.json();
         
         if (data.error) {
-            document.getElementById('api-config-box').style.display = 'flex'; // Hiện lại ô nhập nếu Key lỗi
-            alert("Lỗi API Key: " + data.error.message);
-            qBox.innerText = "⚠️ API Key không hợp lệ. Vui lòng kiểm tra lại!";
+            document.getElementById('api-config-box').style.display = 'flex';
+            qBox.innerText = "⚠️ API Key hết hạn ngạch hoặc không hợp lệ!";
             return;
         }
 
@@ -187,7 +185,7 @@ async function fetchNewQuizSet() {
         showQuestion();
     } catch (err) {
         console.error(err);
-        qBox.innerText = '⚠️ Không thể tải câu hỏi. Hãy kiểm tra kết nối mạng hoặc thử lại!';
+        qBox.innerText = '⚠️ Không thể tải câu hỏi. Kiểm tra kết nối mạng!';
     }
 }
 
@@ -235,7 +233,7 @@ function checkAnswer(selectedIndex, btnElement) {
             currentIndex++;
             showQuestion();
         } else {
-            alert(`🎉 Chúc mừng bé đã hoàn thành!\nTổng điểm: ${score}/100`);
+            alert(`🎉 Chúc mừng bé hoàn thành bài đố!\nĐiểm số: ${score}/100`);
             fetchNewQuizSet();
         }
     }, 1500);
