@@ -73,7 +73,7 @@
 <body>
 
 <div class="app-card">
-    <h1>🎈 SU NHIM - ĐỐ VUI AI 🤖</h1>
+    <h1>🎈 ĐỐ VUI AI </h1>
 
     <div class="api-config">
         <input type="password" id="api-key" placeholder="Dán Gemini API Key vào đây">
@@ -81,9 +81,9 @@
     </div>
 
     <div class="mode-btn-group">
-        <button class="mode-btn easy active" onclick="setMode('easy')">Dễ (5-6T)</button>
-        <button class="mode-btn medium" onclick="setMode('medium')">Vừa (7-8T)</button>
-        <button class="mode-btn hard" onclick="setMode('hard')">Khó (9-10T)</button>
+        <button class="mode-btn easy active" onclick="setMode('easy')">Dễ </button>
+        <button class="mode-btn medium" onclick="setMode('medium')">Vừa </button>
+        <button class="mode-btn hard" onclick="setMode('hard')">Khó </button>
     </div>
 
     <div class="quiz-info">
@@ -91,7 +91,7 @@
         <span id="score">Điểm: 0</span>
     </div>
 
-    <div class="question-box" id="question-text">Vui lòng nhập API Key để Su Nhim bắt đầu!</div>
+    <div class="question-box" id="question-text">Vui lòng nhập API Key để tôi bắt đầu!</div>
     <div class="answers-grid" id="answers-container"></div>
 
     <div class="control-panel">
@@ -131,7 +131,7 @@ async function fetchNewQuizSet() {
 
     const qBox = document.getElementById('question-text');
     document.getElementById('answers-container').innerHTML = '';
-    qBox.innerHTML = '<span class="loading">⏳ Su Nhim đang vắt óc tạo 10 câu đố mới...</span>';
+    qBox.innerHTML = '<span class="loading">⏳ Tôi đang vắt óc tạo 10 câu đố mới...</span>';
 
     const prompts = {
         easy: "Cho trẻ 5-6 tuổi (đồ vật, con vật, màu sắc đơn giản)",
@@ -217,7 +217,7 @@ function checkAnswer(selectedIndex, btnElement) {
             currentIndex++;
             showQuestion();
         } else {
-            alert(`🎉 Su Nhim chúc mừng bé đã hoàn thành!\nTổng điểm: ${score}/100`);
+            alert(`🎉 Chúc mừng bé đã hoàn thành!\nTổng điểm: ${score}/100`);
             fetchNewQuizSet();
         }
     }, 1500);
