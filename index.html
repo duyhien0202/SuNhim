@@ -179,7 +179,7 @@ async function fetchNewQuizSet() {
             localStorage.removeItem('GEMINI_API_KEY');
             apiKey = '';
             document.getElementById('api-config-box').style.display = 'flex';
-            qBox.innerText = "⚠️ Key bị lỗi: " + (data.error.message || "Không hợp lệ!");
+            qBox.innerText = "⚠️ Key bị lỗi: " + (data.error.message || "Không hợp lệ");
             return;
         }
 
