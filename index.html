@@ -75,7 +75,7 @@
     </div>
 
     <div class="api-config" id="api-config-box">
-        <input type="password" id="api-key" placeholder="Dán Gemini API Key mới vào đây">
+        <input type="text" id="api-key" placeholder="Dán Gemini API Key mới vào đây">
         <button onclick="saveApiKey()">Lưu Key</button>
     </div>
 
@@ -90,7 +90,7 @@
         <span id="score">Điểm: 0</span>
     </div>
 
-    <div class="question-box" id="question-text">Nhập API Key để bắt đầu chơi!</div>
+    <div class="question-box" id="question-text">Vui lòng dán API Key mới để bắt đầu!</div>
     <div class="answers-grid" id="answers-container"></div>
 
     <div class="control-panel">
@@ -108,6 +108,8 @@ window.onload = function() {
         document.getElementById('api-key').value = apiKey;
         configBox.style.display = 'none';
         fetchNewQuizSet();
+    } else {
+        configBox.style.display = 'flex';
     }
 };
 
@@ -173,8 +175,11 @@ async function fetchNewQuizSet() {
         const data = await response.json();
         
         if (data.error) {
+            // Xóa Key hỏng trong localStorage nếu API trả lỗi
+            localStorage.removeItem('GEMINI_API_KEY');
+            apiKey = '';
             document.getElementById('api-config-box').style.display = 'flex';
-            qBox.innerText = "⚠️ API Key hết hạn ngạch hoặc không hợp lệ!";
+            qBox.innerText = "⚠️ Key bị lỗi: " + (data.error.message || "Không hợp lệ!");
             return;
         }
 
@@ -185,7 +190,7 @@ async function fetchNewQuizSet() {
         showQuestion();
     } catch (err) {
         console.error(err);
-        qBox.innerText = '⚠️ Không thể tải câu hỏi. Kiểm tra kết nối mạng!';
+        qBox.innerText = '⚠️ Không thể kết nối API. Kiểm tra lại Key hoặc mạng!';
     }
 }
 
